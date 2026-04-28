@@ -12,22 +12,32 @@ spec:
       app: redis
   template:
     metadata:
-      name: redis
       labels:
         app: redis
     spec:
       containers:
         - name: redis
-          image: redis
+          image: redis:7
           ports:
             - containerPort: 6379
+          args: ["--appendonly", "yes"]   # ✅ enable persistence
           volumeMounts:
-            - name: mongo-storage
-              mountPath: /var/lib/redis/dump.rdb
+            - name: redis-storage
+              mountPath: /data            # ✅ correct directory
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
       volumes:
-        - name: mongo-storage
+        - name: redis-storage
           persistentVolumeClaim:
-            claimName: mongo-pvc
+            claimName: redis-pvc   # ✅ separate PVC
+
 ---
 apiVersion: v1
 kind: Service
@@ -35,6 +45,7 @@ metadata:
   name: redis-service
   namespace: wanderlust
 spec:
+  type: ClusterIP   # ✅ internal
   selector:
     app: redis
   ports:
