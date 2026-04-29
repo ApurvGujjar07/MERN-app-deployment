@@ -1,0 +1,29 @@
+# SonarQube Helm Values (Production-ready for your setup)
+
+# ✅ Enable Community Edition (FREE)
+community:
+  enabled: true
+
+# ✅ Persistent storage (EBS via StorageClass)
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: gp2-immediate   # IMPORTANT (fix for your pending issue)
+
+# ✅ Expose externally
+service:
+  type: LoadBalancer
+
+# ✅ Resource allocation (recommended minimum)
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "1000m"
+    memory: "4Gi"
+
+# ✅ Required by Helm chart
+monitoringPasscode: "sonar123"
+
+
