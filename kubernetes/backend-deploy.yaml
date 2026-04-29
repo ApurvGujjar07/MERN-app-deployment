@@ -5,20 +5,31 @@ metadata:
   namespace: wanderlust
   labels:
     app: backend
+
 spec:
-  replicas: 1
+  replicas: 2
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
   selector:
     matchLabels:
       app: backend
+
   template:
     metadata:
       labels:
         app: backend
+
     spec:
       containers:
         - name: backend
           image: 197103521525.dkr.ecr.ap-south-2.amazonaws.com/backend:latest
           imagePullPolicy: Always
+
           ports:
             - containerPort: 5000
 
@@ -33,3 +44,30 @@ spec:
           env:
             - name: PORT
               value: "5000"
+
+          # ✅ Startup Probe
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+
+          # ✅ Readiness Probe
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+          # ✅ Liveness Probe
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3

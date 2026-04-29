@@ -99,7 +99,17 @@ function AddBlog() {
     if (!validateFormData()) return;
 
     try {
-      const response = await axios.post('/api/posts', formData);
+      // ✅ FIXED PAYLOAD
+      const payload = {
+        title: formData.title,
+        content: formData.description,        // mapped correctly
+        author: formData.authorName,          // mapped correctly
+        image: formData.imageLink,            // optional
+        categories: formData.categories,
+        featured: formData.isFeaturedPost,    // optional
+      };
+
+      const response = await axios.post('/api/posts', payload);
 
       if (response.status === 200 || response.status === 201) {
         toast.success('Blog post successfully created!');
@@ -108,7 +118,7 @@ function AddBlog() {
         toast.error('Error: ' + response.data.message);
       }
     } catch (err: any) {
-      toast.error('Error: ' + err.message);
+      toast.error('Error: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -211,3 +221,4 @@ function AddBlog() {
 }
 
 export default AddBlog;
+

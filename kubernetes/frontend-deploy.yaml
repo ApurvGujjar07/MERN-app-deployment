@@ -7,7 +7,8 @@ metadata:
     app: frontend
 
 spec:
-  replicas: 1
+  replicas: 2   # 👈 slightly safer than 1 (basic availability)
+
   selector:
     matchLabels:
       app: frontend
@@ -22,5 +23,33 @@ spec:
         - name: frontend
           image: 197103521525.dkr.ecr.ap-south-2.amazonaws.com/frontend:latest
           imagePullPolicy: Always
+
           ports:
             - containerPort: 80
+
+          # ✅ Resource management (important even without HPA)
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+          # ✅ Readiness Probe (traffic control)
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+          # ✅ Liveness Probe (self-healing)
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3

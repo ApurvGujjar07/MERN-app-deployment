@@ -15,7 +15,7 @@ const port = PORT || 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ CORS (keep open for now)
+// CORS
 app.use(cors({
   origin: '*',
 }));
@@ -29,13 +29,18 @@ connectDB();
 // Connect to redis
 connectToRedis();
 
-// ✅ API routes (already PERFECT)
+// API routes
 app.use('/api/posts', postsRouter);
 app.use('/api/auth', authRouter);
 
-// Health check / root
+// Root route
 app.get('/', (req, res) => {
   res.send('Yay!! Backend of wanderlust app is now accessible');
+});
+
+// ✅ Health check (for Kubernetes probes)
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
 // Start server
@@ -44,3 +49,4 @@ app.listen(port, () => {
 });
 
 export default app;
+
