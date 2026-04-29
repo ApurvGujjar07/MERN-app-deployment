@@ -35,11 +35,11 @@ spec:
 
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: "500m"
+              memory: "512Mi"
             limits:
               cpu: "1000m"
-              memory: "512Mi"
+              memory: "1000Mi"
 
           env:
             - name: PORT

@@ -17,11 +17,11 @@ service:
 # ✅ Resource allocation (recommended minimum)
 resources:
   requests:
-    cpu: "500m"
-    memory: "2Gi"
+    cpu: "200m"
+    memory: "500Mi"
   limits:
-    cpu: "1000m"
-    memory: "4Gi"
+    cpu: "400m"
+    memory: "1Gi"
 
 # ✅ Required by Helm chart
 monitoringPasscode: "sonar123"
