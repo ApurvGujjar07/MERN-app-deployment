@@ -5,18 +5,22 @@ metadata:
   namespace: wanderlust
   labels:
     app: frontend
+
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: frontend
+
   template:
     metadata:
       labels:
         app: frontend
+
     spec:
       containers:
         - name: frontend
-          image: apurv023/frontend:v5
+          image: 197103521525.dkr.ecr.ap-south-2.amazonaws.com/frontend:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: 80   # ✅ FIXED
+            - containerPort: 80
