@@ -1,0 +1,62 @@
+pipeline {
+agent any
+
+environment {
+    AWS_REGION = "ap-south-2"
+    ECR_REGISTRY = "197103521525.dkr.ecr.ap-south-2.amazonaws.com"
+    ECR_REPO = "${ECR_REGISTRY}/frontend"
+    IMAGE_TAG = "${BUILD_NUMBER}"
+}
+
+stages {
+
+    // ===================== CHECKOUT =====================
+    stage('Checkout') {
+        steps {
+            git branch: 'dev', url: 'https://github.com/ApurvGujjar07/MERN-app-deployment.git'
+        }
+    }
+
+    // ===================== LOGIN TO ECR =====================
+    stage('Login to ECR') {
+        steps {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
+                sh '''
+                aws ecr get-login-password --region $AWS_REGION | \
+                docker login --username AWS --password-stdin $ECR_REGISTRY
+                '''
+            }
+        }
+    }
+
+    // ===================== BUILD IMAGE =====================
+    stage('Build Image') {
+        steps {
+            dir('frontend') {
+                sh 'docker build -t $ECR_REPO:$IMAGE_TAG .'
+            }
+        }
+    }
+
+    // ===================== PUSH IMAGE =====================
+    stage('Push Image') {
+        steps {
+            sh 'docker push $ECR_REPO:$IMAGE_TAG'
+        }
+    }
+
+    // ===================== DEPLOY TO EKS =====================
+    stage('Deploy to EKS (Rolling Update)') {
+        steps {
+            sh '''
+            kubectl set image deployment/frontend-deployment \
+            frontend=$ECR_REPO:$IMAGE_TAG -n wanderlust
+
+            kubectl rollout status deployment/frontend-deployment -n wanderlust
+            '''
+        }
+    }
+}
+
+}
+
