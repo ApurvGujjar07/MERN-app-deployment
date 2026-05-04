@@ -1,11 +1,12 @@
 pipeline {
 agent any
-
 environment {
     AWS_REGION = "ap-south-2"
     ECR_REGISTRY = "197103521525.dkr.ecr.ap-south-2.amazonaws.com"
     ECR_REPO = "${ECR_REGISTRY}/frontend"
     IMAGE_TAG = "${BUILD_NUMBER}"
+    CLUSTER_NAME = "mern-app-deployment"
+    NAMESPACE = "wanderlust"
 }
 
 stages {
@@ -45,15 +46,29 @@ stages {
         }
     }
 
-    // ===================== DEPLOY TO EKS =====================
-    stage('Deploy to EKS (Rolling Update)') {
+    // ===================== DEPLOY =====================
+    stage('Deploy to EKS') {
         steps {
-            sh '''
-            kubectl set image deployment/frontend-deployment \
-            frontend=$ECR_REPO:$IMAGE_TAG -n wanderlust
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
+                sh '''
+                # Configure kubectl
+                aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
-            kubectl rollout status deployment/frontend-deployment -n wanderlust
-            '''
+                # Ensure namespace exists
+                kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
+
+                # Apply manifests (safe for both create/update)
+                kubectl apply -f k8s/frontend-deployment.yaml -n $NAMESPACE
+                kubectl apply -f k8s/frontend-service.yaml -n $NAMESPACE
+
+                # Update image (ensures latest tag rollout)
+                kubectl set image deployment/frontend-deployment \
+                frontend=$ECR_REPO:$IMAGE_TAG -n $NAMESPACE
+
+                # Wait for rollout
+                kubectl rollout status deployment/frontend-deployment -n $NAMESPACE
+                '''
+            }
         }
     }
 }

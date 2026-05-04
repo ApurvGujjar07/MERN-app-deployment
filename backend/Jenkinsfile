@@ -7,6 +7,7 @@ environment {
     ECR_REPO = "${ECR_REGISTRY}/backend"
     IMAGE_TAG = "${BUILD_NUMBER}"
     CLUSTER_NAME = "mern-app-deployment"
+    NAMESPACE = "wanderlust"
 }
 
 stages {
@@ -46,17 +47,27 @@ stages {
         }
     }
 
-    // ===================== DEPLOY TO EKS =====================
-    stage('Deploy to EKS (Rolling Update)') {
+    // ===================== DEPLOY =====================
+    stage('Deploy to EKS') {
         steps {
             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
                 sh '''
+                # Configure kubectl
                 aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
-                kubectl set image deployment/backend-deployment \
-                backend=$ECR_REPO:$IMAGE_TAG -n wanderlust
+                # Ensure namespace exists
+                kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
-                kubectl rollout status deployment/backend-deployment -n wanderlust
+                # Apply manifests
+                kubectl apply -f k8s/backend-deployment.yaml -n $NAMESPACE
+                kubectl apply -f k8s/backend-service.yaml -n $NAMESPACE
+
+                # Update image
+                kubectl set image deployment/backend-deployment \
+                backend=$ECR_REPO:$IMAGE_TAG -n $NAMESPACE
+
+                # Wait for rollout
+                kubectl rollout status deployment/backend-deployment -n $NAMESPACE
                 '''
             }
         }
