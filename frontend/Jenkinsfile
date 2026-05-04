@@ -58,8 +58,8 @@ stages {
                 kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
                 # Apply manifests (safe for both create/update)
-                kubectl apply -f k8s/frontend-deployment.yaml -n $NAMESPACE
-                kubectl apply -f k8s/frontend-service.yaml -n $NAMESPACE
+                kubectl apply -f kubernetes/frontend-deployment.yaml -n $NAMESPACE
+                kubectl apply -f kubernetes/frontend-service.yaml -n $NAMESPACE
 
                 # Update image (ensures latest tag rollout)
                 kubectl set image deployment/frontend-deployment \
