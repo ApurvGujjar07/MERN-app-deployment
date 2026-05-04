@@ -1,55 +1,61 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-deployment
-  namespace: wanderlust
-  labels:
-    app: frontend
+name: frontend-deployment
+namespace: wanderlust
+labels:
+app: frontend
 
 spec:
-  replicas: 2   # 👈 slightly safer than 1 (basic availability)
+replicas: 2   # basic high availability
 
-  selector:
-    matchLabels:
-      app: frontend
+strategy:
+type: RollingUpdate
+rollingUpdate:
+maxUnavailable: 1
+maxSurge: 1
 
-  template:
-    metadata:
-      labels:
-        app: frontend
+selector:
+matchLabels:
+app: frontend
 
-    spec:
-      containers:
-        - name: frontend
-          image: 197103521525.dkr.ecr.ap-south-2.amazonaws.com/frontend:latest
-          imagePullPolicy: Always
+template:
+metadata:
+labels:
+app: frontend
 
-          ports:
-            - containerPort: 80
+```
+spec:
+  containers:
+    - name: frontend
+      image: 197103521525.dkr.ecr.ap-south-2.amazonaws.com/frontend:latest
+      imagePullPolicy: Always
 
-          # ✅ Resource management (important even without HPA)
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "200m"
-              memory: "128Mi"
+      ports:
+        - containerPort: 80
 
-          # ✅ Readiness Probe (traffic control)
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "512Mi"
+        limits:
+          cpu: "850m"
+          memory: "1000Mi"
 
-          # ✅ Liveness Probe (self-healing)
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            failureThreshold: 3
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 3
+
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        failureThreshold: 3
+```
+
