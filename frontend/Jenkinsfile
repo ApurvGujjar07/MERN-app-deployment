@@ -47,23 +47,20 @@ stages {
         steps {
             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
                 sh '''
-                # Configure kubectl
                 aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
-                # Ensure namespace exists
                 kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
-                echo "Applying Kubernetes manifests..."
+                echo "Applying frontend manifests..."
 
-                kubectl apply -f kubernetes/frontend-deployment.yaml -n $NAMESPACE
-                kubectl apply -f kubernetes/frontend-service.yaml -n $NAMESPACE
+                # ✅ FIXED FILE NAMES
+                kubectl apply -f kubernetes/frontend-deploy.yaml -n $NAMESPACE
+                kubectl apply -f kubernetes/frontend-svc.yml -n $NAMESPACE
 
                 echo "Updating image..."
 
                 kubectl set image deployment/frontend-deployment \
                 frontend=$ECR_REPO:$IMAGE_TAG -n $NAMESPACE
-
-                echo "Waiting for rollout..."
 
                 kubectl rollout status deployment/frontend-deployment -n $NAMESPACE
                 '''
@@ -71,7 +68,6 @@ stages {
         }
     }
 }
-
 
 }
 

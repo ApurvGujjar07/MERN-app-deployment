@@ -1,6 +1,5 @@
 pipeline {
 agent any
-
 environment {
     AWS_REGION = "ap-south-2"
     ECR_REGISTRY = "197103521525.dkr.ecr.ap-south-2.amazonaws.com"
@@ -47,23 +46,20 @@ stages {
         steps {
             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
                 sh '''
-                # Configure kubectl
                 aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
-                # Ensure namespace exists
                 kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
-                echo "Applying Kubernetes manifests..."
+                echo "Applying backend manifests..."
 
-                kubectl apply -f kubernetes/backend-deployment.yaml -n $NAMESPACE
-                kubectl apply -f kubernetes/backend-service.yaml -n $NAMESPACE
+                # ✅ FIXED FILE NAMES
+                kubectl apply -f kubernetes/backend-deploy.yaml -n $NAMESPACE
+                kubectl apply -f kubernetes/backend-svc.yml -n $NAMESPACE
 
                 echo "Updating image..."
 
                 kubectl set image deployment/backend-deployment \
                 backend=$ECR_REPO:$IMAGE_TAG -n $NAMESPACE
-
-                echo "Waiting for rollout..."
 
                 kubectl rollout status deployment/backend-deployment -n $NAMESPACE
                 '''
@@ -71,7 +67,6 @@ stages {
         }
     }
 }
-
 
 }
 
