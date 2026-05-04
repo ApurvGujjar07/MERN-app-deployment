@@ -1,5 +1,6 @@
 pipeline {
 agent any
+
 environment {
     AWS_REGION = "ap-south-2"
     ECR_REGISTRY = "197103521525.dkr.ecr.ap-south-2.amazonaws.com"
@@ -11,14 +12,12 @@ environment {
 
 stages {
 
-    // ===================== CHECKOUT =====================
     stage('Checkout') {
         steps {
             git branch: 'dev', url: 'https://github.com/ApurvGujjar07/MERN-app-deployment.git'
         }
     }
 
-    // ===================== LOGIN TO ECR =====================
     stage('Login to ECR') {
         steps {
             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
@@ -30,7 +29,6 @@ stages {
         }
     }
 
-    // ===================== BUILD IMAGE =====================
     stage('Build Image') {
         steps {
             dir('frontend') {
@@ -39,14 +37,12 @@ stages {
         }
     }
 
-    // ===================== PUSH IMAGE =====================
     stage('Push Image') {
         steps {
             sh 'docker push $ECR_REPO:$IMAGE_TAG'
         }
     }
 
-    // ===================== DEPLOY =====================
     stage('Deploy to EKS') {
         steps {
             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
@@ -57,21 +53,25 @@ stages {
                 # Ensure namespace exists
                 kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
-                # Apply manifests (safe for both create/update)
+                echo "Applying Kubernetes manifests..."
+
                 kubectl apply -f kubernetes/frontend-deployment.yaml -n $NAMESPACE
                 kubectl apply -f kubernetes/frontend-service.yaml -n $NAMESPACE
 
-                # Update image (ensures latest tag rollout)
+                echo "Updating image..."
+
                 kubectl set image deployment/frontend-deployment \
                 frontend=$ECR_REPO:$IMAGE_TAG -n $NAMESPACE
 
-                # Wait for rollout
+                echo "Waiting for rollout..."
+
                 kubectl rollout status deployment/frontend-deployment -n $NAMESPACE
                 '''
             }
         }
     }
 }
+
 
 }
 

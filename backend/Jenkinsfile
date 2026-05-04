@@ -12,14 +12,12 @@ environment {
 
 stages {
 
-    // ===================== CHECKOUT =====================
     stage('Checkout') {
         steps {
             git branch: 'dev', url: 'https://github.com/ApurvGujjar07/MERN-app-deployment.git'
         }
     }
 
-    // ===================== LOGIN TO ECR =====================
     stage('Login to ECR') {
         steps {
             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
@@ -31,7 +29,6 @@ stages {
         }
     }
 
-    // ===================== BUILD IMAGE =====================
     stage('Build Image') {
         steps {
             dir('backend') {
@@ -40,14 +37,12 @@ stages {
         }
     }
 
-    // ===================== PUSH IMAGE =====================
     stage('Push Image') {
         steps {
             sh 'docker push $ECR_REPO:$IMAGE_TAG'
         }
     }
 
-    // ===================== DEPLOY =====================
     stage('Deploy to EKS') {
         steps {
             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWSCred']]) {
@@ -58,21 +53,25 @@ stages {
                 # Ensure namespace exists
                 kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
-                # Apply manifests
-                kubectl apply -f k8s/backend-deployment.yaml -n $NAMESPACE
-                kubectl apply -f k8s/backend-service.yaml -n $NAMESPACE
+                echo "Applying Kubernetes manifests..."
 
-                # Update image
+                kubectl apply -f kubernetes/backend-deployment.yaml -n $NAMESPACE
+                kubectl apply -f kubernetes/backend-service.yaml -n $NAMESPACE
+
+                echo "Updating image..."
+
                 kubectl set image deployment/backend-deployment \
                 backend=$ECR_REPO:$IMAGE_TAG -n $NAMESPACE
 
-                # Wait for rollout
+                echo "Waiting for rollout..."
+
                 kubectl rollout status deployment/backend-deployment -n $NAMESPACE
                 '''
             }
         }
     }
 }
+
 
 }
 
