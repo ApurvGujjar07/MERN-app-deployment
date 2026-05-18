@@ -8,7 +8,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm run test
+RUN npm test -- --watchAll=false
 
 # Stage 2 - Runtime
 FROM node:21-slim
