@@ -1,5 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: backend-deployment
   namespace: wanderlust
@@ -27,8 +28,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 197103521525.dkr.ecr.ap-south-2.amazonaws.com/backend:latest
-          imagePullPolicy: Always
+          image: backend:1
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 5000
@@ -45,7 +46,6 @@ spec:
             - name: PORT
               value: "5000"
 
-          # ✅ Startup Probe
           startupProbe:
             httpGet:
               path: /health
@@ -54,7 +54,6 @@ spec:
             periodSeconds: 5
             failureThreshold: 30
 
-          # ✅ Readiness Probe
           readinessProbe:
             httpGet:
               path: /health
@@ -63,7 +62,6 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
 
-          # ✅ Liveness Probe
           livenessProbe:
             httpGet:
               path: /health
